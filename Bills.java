@@ -34,7 +34,7 @@ public class Bills {
 
 		try {
 			Class.forName("org.postgresql.Driver");
-			connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/test", "postgres", "hyundai444");
+			connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/test", "postgres", "postgres");
 			connection.setAutoCommit(true);
 //		       JOptionPane.showMessageDialog(null, "Connected successfully!");
 		} catch (Exception e) {
