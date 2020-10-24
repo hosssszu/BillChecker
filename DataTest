@@ -1,4 +1,3 @@
-
 public class DataTest {
 
 	int p1, p2, p3;
@@ -75,5 +74,4 @@ public class DataTest {
 			return false;
 		}
 	}
-
 }
