@@ -58,7 +58,6 @@ public class Bills {
 
 	public updateBills() {
 		initialize();
-
 	}
 
 	private void initialize() {
@@ -107,8 +106,7 @@ public class Bills {
 				int amountInt = Integer.parseInt(amount);
 				try {
 					Statement stat = connection.createStatement();
-					String sqlInsert = "INSERT INTO BILLSB" + "(Data, Money) VALUES('" + data + "', '" + amountInt
-							+ "')";
+					String sqlInsert = "INSERT INTO BILLSB" + "(Data, Money) VALUES('" + data + "', '" + amountInt + "')";
 					stat.executeUpdate(sqlInsert);
 					String balanceValue = balanceLabel.getText();
 					int balanceValueInt = Integer.parseInt(balanceValue);
@@ -493,7 +491,6 @@ public class Bills {
 					balanceLabel.setText(moneyDifferenceString);
 					textFieldPrice.setText("");
 				} catch (Exception ex) {
-					System.err.println(ex.getMessage());
 					JOptionPane.showMessageDialog(null, "Invalid input!");
 					textFieldData.setText("");
 					textFieldPrice.setText("");
