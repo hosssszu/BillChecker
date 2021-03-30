@@ -116,8 +116,7 @@ public class BillTracker {
 					String total = String.valueOf(totalInt);
 					balanceLabel.setText(total);
 				} catch (SQLException | NumberFormatException ex) {
-					JOptionPane.showMessageDialog(null, "Invalid input! Try again!", "Message",
-							JOptionPane.INFORMATION_MESSAGE);
+					JOptionPane.showMessageDialog(null, "Invalid input! Try again!", "Message", JOptionPane.INFORMATION_MESSAGE);
 					ex.printStackTrace();
 				}
 			}
@@ -134,8 +133,7 @@ public class BillTracker {
 		about.setMnemonic(KeyEvent.VK_A);
 		about.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showMessageDialog(null, "Created by Szegedi Loránd!\nVersion: 1.0", "Message",
-						JOptionPane.INFORMATION_MESSAGE);
+				JOptionPane.showMessageDialog(null, "Created by Szegedi Loránd!\nVersion: 1.0", "Message", JOptionPane.INFORMATION_MESSAGE);
 			}
 		});
 		menuhelp.add(about);
@@ -235,12 +233,8 @@ public class BillTracker {
 		mntmShowAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				defaultListModel.clear();
-				try {
-					String sqlQuery = "select * from bills order by id desc;";
-					extractedList(defaultListModel, sqlQuery);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				String sqlQuery = "select * from bills order by id desc;";
+				extractedList(defaultListModel, sqlQuery);
 			}
 		});
 		mntmShowAll.setMnemonic(KeyEvent.VK_S);
@@ -250,12 +244,8 @@ public class BillTracker {
 		mntmSOMES.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				defaultListModel.clear();
-				try {
-					String sqlQuery = "select * from bills where firma like 'C%' order by id desc;";
-					extractedList(defaultListModel, sqlQuery);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				String sqlQuery = "select * from bills where firma like 'C%' order by id desc;";
+				extractedList(defaultListModel, sqlQuery);
 			}
 		});
 		mnEdit.add(mntmSOMES);
@@ -264,12 +254,8 @@ public class BillTracker {
 		mntmElectrica.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				defaultListModel.clear();
-				try {
-					String sqlQuery = "select * from bills where firma like 'E%' order by id desc;";
-					extractedList(defaultListModel, sqlQuery);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				String sqlQuery = "select * from bills where firma like 'E%' order by id desc;";
+				extractedList(defaultListModel, sqlQuery);
 			}
 		});
 		mnEdit.add(mntmElectrica);
@@ -278,12 +264,8 @@ public class BillTracker {
 		mntmRcsrds.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				defaultListModel.clear();
-				try {
-					String sqlQuery = "select * from bills where firma like 'R%' order by id desc;";
-					extractedList(defaultListModel, sqlQuery);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				String sqlQuery = "select * from bills where firma like 'R%' order by id desc;";
+				extractedList(defaultListModel, sqlQuery);
 			}
 		});
 		mnEdit.add(mntmRcsrds);
@@ -292,12 +274,8 @@ public class BillTracker {
 		mntmUpc.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				defaultListModel.clear();
-				try {
-					String sqlQuery = "select * from bills where firma like 'U%' order by id desc;";
-					extractedList(defaultListModel, sqlQuery);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				String sqlQuery = "select * from bills where firma like 'U%' order by id desc;";
+				extractedList(defaultListModel, sqlQuery);
 			}
 		});
 		mnEdit.add(mntmUpc);
@@ -306,12 +284,8 @@ public class BillTracker {
 		mntmVodafone.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				defaultListModel.clear();
-				try {
-					String sqlQuery = "select * from bills where firma like 'V%' order by id desc;";
-					extractedList(defaultListModel, sqlQuery);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				String sqlQuery = "select * from bills where firma like 'V%' order by id desc;";
+				extractedList(defaultListModel, sqlQuery);
 			}
 		});
 		mnEdit.add(mntmVodafone);
@@ -389,8 +363,7 @@ public class BillTracker {
 		mntmDelete.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
-				int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete the last input?",
-						"DELETE", JOptionPane.YES_NO_OPTION);
+				int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete the last input?", "DELETE", JOptionPane.YES_NO_OPTION);
 				if (result == JOptionPane.YES_OPTION) {
 					defaultListModel.clear();
 					try {
@@ -459,18 +432,21 @@ public class BillTracker {
 		balanceLabel.setText(moneyDifferenceInt);
 	}
 
-	private void extractedList(DefaultListModel<String> defaultListMedel, String sqlQuery) throws SQLException {
-		PreparedStatement stat = connection.prepareStatement(sqlQuery);
-		ResultSet rs = stat.executeQuery();
-
-		while (rs.next()) {
-			StringBuilder builder = new StringBuilder();
-			String getID = rs.getString("ID");
-			String getDate = rs.getString("Date");
-			String getSuma = rs.getString("Suma");
-			String getFirma = rs.getString("Firma");
-			builder.append("<html><pre>" + String.format("%s, \t %s, \t %s lei, \t %s", getID, getDate, getSuma, getFirma) + "</pre></html>");
-			defaultListMedel.addElement(builder.toString());
+	private void extractedList(DefaultListModel<String> defaultListMedel, String sqlQuery) {
+		try {
+			PreparedStatement stat = connection.prepareStatement(sqlQuery);
+			ResultSet rs = stat.executeQuery();
+			while (rs.next()) {
+				StringBuilder builder = new StringBuilder();
+				String getID = rs.getString("ID");
+				String getDate = rs.getString("Date");
+				String getSuma = rs.getString("Suma");
+				String getFirma = rs.getString("Firma");
+				builder.append("<html><pre>" + String.format("%s, \t %s, \t %s lei, \t %s", getID, getDate, getSuma, getFirma) + "</pre></html>");
+				defaultListMedel.addElement(builder.toString());
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 }
