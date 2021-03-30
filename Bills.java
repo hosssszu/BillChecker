@@ -15,16 +15,16 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.sql.SQLException;
 import java.awt.event.ActionEvent;
 import javax.swing.JList;
 
-public class Bills {
+public class BillTracker {
 
 	static Connection connection = null;
 	int biggestID = 0;
@@ -34,12 +34,10 @@ public class Bills {
 
 		try {
 			Class.forName("org.postgresql.Driver");
-			connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/test", "postgres", "postgres");
+			connection = DriverManager.getConnection("jdbc:postgresql://localhost:5432/test", "postgres", "password");
 			connection.setAutoCommit(true);
-//		       JOptionPane.showMessageDialog(null, "Connected successfully!");
 		} catch (Exception e) {
 			e.printStackTrace();
-			System.err.println(e.getClass().getName() + ": " + e.getMessage());
 			JOptionPane.showMessageDialog(null, "Connection failed!");
 			System.exit(0);
 		}
@@ -47,7 +45,7 @@ public class Bills {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					Bills window = new Bills();
+					BillTracker window = new BillTracker();
 					window.frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -56,13 +54,13 @@ public class Bills {
 		});
 	}
 
-	public updateBills() {
+	public BillTracker() {
 		initialize();
 	}
 
 	private void initialize() {
 		frame = new JFrame();
-		frame.setBounds(100, 100, 480, 320);
+		frame.setBounds(100, 100, 480, 339);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setResizable(false);
 		frame.setLocationRelativeTo(null);
@@ -78,6 +76,11 @@ public class Bills {
 		JMenuItem mntmExit = new JMenuItem("Exit");
 		mntmExit.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				try {
+					connection.close();
+				} catch (SQLException ex) {
+					ex.printStackTrace();
+				}
 				System.exit(0);
 			}
 		});
@@ -92,29 +95,30 @@ public class Bills {
 		mnOptions.setMnemonic(KeyEvent.VK_O);
 		menuBar.add(mnOptions);
 
-		SimpleDateFormat spf = new SimpleDateFormat("dd/MM/yyyy");
-		String data = spf.format(new Date());
-
 		JLabel balanceLabel = new JLabel("");
-		balanceLabel.setBounds(80, 231, 58, 14);
+		balanceLabel.setBounds(70, 251, 58, 14);
 		frame.getContentPane().add(balanceLabel);
 
 		JMenuItem mntmAddAmount = new JMenuItem("Add amount");
 		mntmAddAmount.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				String date = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
 				String amount = JOptionPane.showInputDialog(null, "Amount: ", "Input", JOptionPane.PLAIN_MESSAGE);
-				int amountInt = Integer.parseInt(amount);
 				try {
-					Statement stat = connection.createStatement();
-					String sqlInsert = "INSERT INTO BILLSB" + "(Data, Money) VALUES('" + data + "', '" + amountInt + "')";
-					stat.executeUpdate(sqlInsert);
-					String balanceValue = balanceLabel.getText();
-					int balanceValueInt = Integer.parseInt(balanceValue);
-					int totalInt = amountInt + balanceValueInt;
+					int amountInt = Integer.parseInt(amount);
+					String sqlInsert = "INSERT INTO BILLSB" + "(Date, Money) VALUES (?, ?)";
+					PreparedStatement statement = connection.prepareStatement(sqlInsert);
+					statement.setString(1, date);
+					statement.setInt(2, amountInt);
+					statement.executeUpdate();
+					int balanceValue = Integer.parseInt(balanceLabel.getText());
+					int totalInt = amountInt + balanceValue;
 					String total = String.valueOf(totalInt);
 					balanceLabel.setText(total);
-				} catch (SQLException exceptionAdd) {
-					exceptionAdd.printStackTrace();
+				} catch (SQLException | NumberFormatException ex) {
+					JOptionPane.showMessageDialog(null, "Invalid input! Try again!", "Message",
+							JOptionPane.INFORMATION_MESSAGE);
+					ex.printStackTrace();
 				}
 			}
 		});
@@ -137,28 +141,28 @@ public class Bills {
 		menuhelp.add(about);
 
 		JLabel lblBalance = new JLabel("Balance:");
-		lblBalance.setBounds(19, 231, 61, 14);
+		lblBalance.setBounds(9, 251, 61, 14);
 		frame.getContentPane().add(lblBalance);
 
 		JLabel totalMoneySpentLabel = new JLabel("");
-		totalMoneySpentLabel.setBounds(263, 246, 61, 14);
+		totalMoneySpentLabel.setBounds(263, 266, 61, 14);
 		totalMoneySpentLabel.setVisible(false);
 		frame.getContentPane().add(totalMoneySpentLabel);
 
 		JLabel lblLei = new JLabel("lei");
-		lblLei.setBounds(112, 231, 46, 14);
+		lblLei.setBounds(102, 251, 46, 14);
 		frame.getContentPane().add(lblLei);
 
 		JLabel lblDate = new JLabel("Date");
-		lblDate.setBounds(34, 11, 46, 14);
+		lblDate.setBounds(24, 11, 46, 14);
 		frame.getContentPane().add(lblDate);
 
 		JLabel lblPrice = new JLabel("Price");
-		lblPrice.setBounds(137, 11, 46, 14);
+		lblPrice.setBounds(131, 11, 46, 14);
 		frame.getContentPane().add(lblPrice);
 
 		JLabel lblProvider = new JLabel("Provider");
-		lblProvider.setBounds(239, 11, 58, 14);
+		lblProvider.setBounds(236, 11, 58, 14);
 		frame.getContentPane().add(lblProvider);
 
 		JLabel totalMoney = new JLabel("");
@@ -166,87 +170,62 @@ public class Bills {
 		totalMoney.setBounds(151, 246, 61, 14);
 		frame.getContentPane().add(totalMoney);
 
-		String[] company = { "Compania de apa", "Electrica", "RCS&RDS", "UPC", "Vodafone" };
+		String[] company = { "Provider1", "Provider2", "Provider3", "Provider4", "Provider5" };
 		JComboBox comboBox = new JComboBox(company);
 		comboBox.setSelectedIndex(-1);
-		comboBox.setBounds(220, 27, 143, 21);
+		comboBox.setBounds(217, 27, 143, 21);
 
-		JTextField textFieldData = new JTextField();
-		textFieldData.setBounds(19, 27, 90, 22);
-		textFieldData.setColumns(10);
-		frame.getContentPane().add(textFieldData);
+		JTextField textFieldDate = new JTextField();
+		textFieldDate.setBounds(9, 27, 90, 22);
+		textFieldDate.setColumns(10);
+		frame.getContentPane().add(textFieldDate);
 
 		JTextField textFieldPrice = new JTextField();
-		textFieldPrice.setBounds(119, 27, 91, 22);
+		textFieldPrice.setBounds(113, 27, 91, 22);
 		textFieldPrice.setColumns(10);
 		frame.getContentPane().setLayout(null);
 		frame.getContentPane().add(comboBox);
 		frame.getContentPane().add(textFieldPrice);
 
 		JScrollPane scrollPane = new JScrollPane();
-		scrollPane.setBounds(19, 58, 439, 162);
+		scrollPane.setBounds(9, 58, 449, 182);
 		frame.getContentPane().add(scrollPane);
 
 		JList list = new JList();
 		scrollPane.setViewportView(list);
-		DefaultListModel<String> defaultListMedel = new DefaultListModel<>();
+		DefaultListModel<String> defaultListModel = new DefaultListModel<>();
 
 		try {
+			String sqlBillsSum = "select sum(suma) from bills;";
+			PreparedStatement stat = connection.prepareStatement(sqlBillsSum);
+			ResultSet rs = stat.executeQuery();
+
+			while (rs.next()) {
+				StringBuilder builder = new StringBuilder();
+				builder.append(String.format("%d", rs.getInt(1)));
+				totalMoneySpentLabel.setText(builder.toString());
+			}
 
 			String sqlBills = "select * from bills order by id desc;";
-			String sqlBillsSum = "select sum(suma) from bills;";
+			extractedList(defaultListModel, sqlBills);
+			
+			stat = connection.prepareStatement(sqlBills);
+			rs = stat.executeQuery();
+			rs.next();
+			biggestID = Integer.parseInt(rs.getString("ID"));
 
-			Statement stat1 = connection.createStatement();
-			Statement stat2 = connection.createStatement();
-
-			ResultSet rs1 = stat1.executeQuery(sqlBillsSum);
-			ResultSet rs2 = stat2.executeQuery(sqlBills);
-
-			StringBuilder builder1 = new StringBuilder();
-
-			while (rs1.next()) {
-				builder1.append(String.format("%d", rs1.getInt(1)));
-				totalMoneySpentLabel.setText(builder1.toString());
-			}
-
-			while (rs2.next()) {
-
-				StringBuilder builder2 = new StringBuilder();
-
-				String getID = rs2.getString("ID");
-				String getData = rs2.getString("Data");
-				String getSuma = rs2.getString("Suma");
-				String getFirma = rs2.getString("Firma");
-
-				builder2.append("<html><pre>");
-				builder2.append(String.format("%s, \t %s, \t %s lei, \t %s", getID, getData, getSuma, getFirma));
-				builder2.append("</pre></html>");
-
-				defaultListMedel.addElement(builder2.toString());
-
-				int id = Integer.parseInt(getID);
-				biggestID = Math.max(id, biggestID);
-			}
-
-			list.setModel(defaultListMedel);
+			list.setModel(defaultListModel);
 
 			String sqlBillsBSum = "select sum(money) from billsb;";
-			ResultSet rs3 = stat2.executeQuery(sqlBillsBSum);
+			stat = connection.prepareStatement(sqlBillsBSum);
+			rs = stat.executeQuery();
 
-			StringBuilder builder3 = new StringBuilder();
-
-			while (rs3.next()) {
-				builder3.append(String.format("%d", rs3.getInt(1)));
-				totalMoney.setText(builder3.toString());
+			while (rs.next()) {
+				StringBuilder builder = new StringBuilder();
+				builder.append(String.format("%d", rs.getInt(1)));
+				totalMoney.setText(builder.toString());
 			}
-
-			String totalMoneyString = totalMoney.getText();
-			String totalMoneySpentString = totalMoneySpentLabel.getText();
-			int totalMoneyInt = Integer.parseInt(totalMoneyString);
-			int totalMoneySpentInt = Integer.parseInt(totalMoneySpentString);
-			int moneyDifference = totalMoneyInt - totalMoneySpentInt;
-			String moneyDifferenceInt = String.valueOf(moneyDifference);
-			balanceLabel.setText(moneyDifferenceInt);
+			extractedValue(balanceLabel, totalMoneySpentLabel, totalMoney);
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -255,161 +234,83 @@ public class Bills {
 		JMenuItem mntmShowAll = new JMenuItem("Show all");
 		mntmShowAll.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				defaultListMedel.clear();
+				defaultListModel.clear();
 				try {
-					Statement stat = connection.createStatement();
 					String sqlQuery = "select * from bills order by id desc;";
-					ResultSet rs2 = stat.executeQuery(sqlQuery);
-
-					while (rs2.next()) {
-						StringBuilder builder = new StringBuilder();
-						String getID = rs2.getString("ID");
-						String getData = rs2.getString("Data");
-						String getSuma = rs2.getString("Suma");
-						String getFirma = rs2.getString("Firma");
-						builder.append("<html><pre>");
-						builder.append(String.format("%s, \t %s, \t %s lei, \t %s", getID, getData, getSuma, getFirma));
-						builder.append("</pre></html>");
-						defaultListMedel.addElement(builder.toString());
-					}
-				} catch (Exception ef) {
-					ef.printStackTrace();
+					extractedList(defaultListModel, sqlQuery);
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
 		});
 		mntmShowAll.setMnemonic(KeyEvent.VK_S);
 		mnEdit.add(mntmShowAll);
 
-		JMenuItem mntmSOMES = new JMenuItem("Compania de apa");
+		JMenuItem mntmSOMES = new JMenuItem("Provider1");
 		mntmSOMES.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				defaultListMedel.clear();
+				defaultListModel.clear();
 				try {
-					Statement stat = connection.createStatement();
-					String sqlQuery = "select * from bills where firma like 'C%';";
-					ResultSet rs2 = stat.executeQuery(sqlQuery);
-
-					while (rs2.next()) {
-						StringBuilder builder = new StringBuilder();
-						String getID = rs2.getString("ID");
-						String getData = rs2.getString("Data");
-						String getSuma = rs2.getString("Suma");
-						String getFirma = rs2.getString("Firma");
-						builder.append("<html><pre>");
-						builder.append(String.format("%s, \t %s, \t %s lei, \t %s", getID, getData, getSuma, getFirma));
-						builder.append("</pre></html>");
-						defaultListMedel.addElement(builder.toString());
-					}
-				} catch (Exception ef) {
-					ef.printStackTrace();
+					String sqlQuery = "select * from bills where firma like 'C%' order by id desc;";
+					extractedList(defaultListModel, sqlQuery);
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
 		});
 		mnEdit.add(mntmSOMES);
 
-		JMenuItem mntmElectrica = new JMenuItem("Electrica");
+		JMenuItem mntmElectrica = new JMenuItem("Provider2");
 		mntmElectrica.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				defaultListMedel.clear();
+				defaultListModel.clear();
 				try {
-					Statement stat = connection.createStatement();
-					String sqlQuery = "select * from bills where firma like 'E%';";
-					ResultSet rs2 = stat.executeQuery(sqlQuery);
-
-					while (rs2.next()) {
-						StringBuilder builder = new StringBuilder();
-						String getID = rs2.getString("ID");
-						String getData = rs2.getString("Data");
-						String getSuma = rs2.getString("Suma");
-						String getFirma = rs2.getString("Firma");
-						builder.append("<html><pre>");
-						builder.append(String.format("%s, \t %s, \t %s lei, \t %s", getID, getData, getSuma, getFirma));
-						builder.append("</pre></html>");
-						defaultListMedel.addElement(builder.toString());
-					}
-				} catch (Exception ef) {
-					ef.printStackTrace();
+					String sqlQuery = "select * from bills where firma like 'E%' order by id desc;";
+					extractedList(defaultListModel, sqlQuery);
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
 		});
 		mnEdit.add(mntmElectrica);
 
-		JMenuItem mntmRcsrds = new JMenuItem("RCS&RDS");
+		JMenuItem mntmRcsrds = new JMenuItem("Provider3");
 		mntmRcsrds.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				defaultListMedel.clear();
+				defaultListModel.clear();
 				try {
-					Statement stat = connection.createStatement();
-					String sqlQuery = "select * from bills where firma like 'R%';";
-					ResultSet rs2 = stat.executeQuery(sqlQuery);
-
-					while (rs2.next()) {
-						StringBuilder builder = new StringBuilder();
-						String getID = rs2.getString("ID");
-						String getData = rs2.getString("Data");
-						String getSuma = rs2.getString("Suma");
-						String getFirma = rs2.getString("Firma");
-						builder.append("<html><pre>");
-						builder.append(String.format("%s, \t %s, \t %s lei, \t %s", getID, getData, getSuma, getFirma));
-						builder.append("</pre></html>");
-						defaultListMedel.addElement(builder.toString());
-					}
-				} catch (Exception ef) {
-					ef.printStackTrace();
+					String sqlQuery = "select * from bills where firma like 'R%' order by id desc;";
+					extractedList(defaultListModel, sqlQuery);
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
 		});
 		mnEdit.add(mntmRcsrds);
 
-		JMenuItem mntmUpc = new JMenuItem("UPC");
+		JMenuItem mntmUpc = new JMenuItem("Provider4");
 		mntmUpc.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				defaultListMedel.clear();
+				defaultListModel.clear();
 				try {
-					Statement stat = connection.createStatement();
-					String sqlQuery = "select * from bills where firma like 'U%';";
-					ResultSet rs2 = stat.executeQuery(sqlQuery);
-
-					while (rs2.next()) {
-						StringBuilder builder = new StringBuilder();
-						String getID = rs2.getString("ID");
-						String getData = rs2.getString("Data");
-						String getSuma = rs2.getString("Suma");
-						String getFirma = rs2.getString("Firma");
-						builder.append("<html><pre>");
-						builder.append(String.format("%s, \t %s, \t %s lei, \t %s", getID, getData, getSuma, getFirma));
-						builder.append("</pre></html>");
-						defaultListMedel.addElement(builder.toString());
-					}
-				} catch (Exception ef) {
-					ef.printStackTrace();
+					String sqlQuery = "select * from bills where firma like 'U%' order by id desc;";
+					extractedList(defaultListModel, sqlQuery);
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
 		});
 		mnEdit.add(mntmUpc);
 
-		JMenuItem mntmVodafone = new JMenuItem("Vodafone");
+		JMenuItem mntmVodafone = new JMenuItem("Provider5");
 		mntmVodafone.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				defaultListMedel.clear();
+				defaultListModel.clear();
 				try {
-					Statement stat = connection.createStatement();
-					String sqlQuery = "select * from bills where firma like 'V%';";
-					ResultSet rs2 = stat.executeQuery(sqlQuery);
-
-					while (rs2.next()) {
-						StringBuilder builder = new StringBuilder();
-						String getID = rs2.getString("ID");
-						String getData = rs2.getString("Data");
-						String getSuma = rs2.getString("Suma");
-						String getFirma = rs2.getString("Firma");
-						builder.append("<html><pre>");
-						builder.append(String.format("%s, \t %s, \t %s lei, \t %s", getID, getData, getSuma, getFirma));
-						builder.append("</pre></html>");
-						defaultListMedel.addElement(builder.toString());
-					}
-				} catch (Exception ef) {
-					ef.printStackTrace();
+					String sqlQuery = "select * from bills where firma like 'V%' order by id desc;";
+					extractedList(defaultListModel, sqlQuery);
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 			}
 		});
@@ -420,54 +321,41 @@ public class Bills {
 			public void actionPerformed(ActionEvent e) {
 
 				try {
-					
-					DataTest dataTest = new DataTest();
-					String data = textFieldData.getText();
+					DataValidator dateValidator = new DataValidator();
+					String date = textFieldDate.getText();
+					int price = Integer.parseInt(textFieldPrice.getText());
+					String provider = comboBox.getSelectedItem().toString();					
 
-					if (dataTest.input(data) == false) {
-						throw new IllegalArgumentException();
+					if (dateValidator.input(date) == false) {
+						JOptionPane.showMessageDialog(null, "Invalid date!", "Message",	JOptionPane.INFORMATION_MESSAGE);
+						textFieldDate.setText("");
+						return;
 					}
 
 					if (Integer.parseInt(textFieldPrice.getText()) < 0) {
+						JOptionPane.showMessageDialog(null, "Invalid price!", "Message", JOptionPane.INFORMATION_MESSAGE);
 						textFieldPrice.setText("");
-						throw new IllegalArgumentException();
+						return;
 					}
 
-					String providerSelected = comboBox.getSelectedItem().toString();
-					if (providerSelected == null) {
-						throw new IllegalArgumentException();
-					}
-
-					defaultListMedel.clear();
+					defaultListModel.clear();
 					biggestID++;
-					Statement stat = connection.createStatement();
 
-					String sqlInsert = "INSERT INTO BILLS" + "(Data, Suma, Firma) VALUES('" + textFieldData.getText()
-							+ "','" + textFieldPrice.getText() + "','" + comboBox.getSelectedItem() + "')";
-
-					stat.executeUpdate(sqlInsert);
+					String sqlInsert = "INSERT INTO BILLS" + "(Date, Suma, Firma) VALUES(?, ? ,?)";
+					PreparedStatement preparedStat = connection.prepareStatement(sqlInsert);
+					preparedStat.setString(1, date);
+					preparedStat.setInt(2, price);
+					preparedStat.setString(3, provider);
+					preparedStat.executeUpdate();
 
 					String sqlQuery = "select * from bills order by id desc;";
-
-					ResultSet rs2 = stat.executeQuery(sqlQuery);
-
-					while (rs2.next()) {
-						StringBuilder builder = new StringBuilder();
-						String getID = rs2.getString("ID");
-						String getData = rs2.getString("Data");
-						String getSuma = rs2.getString("Suma");
-						String getFirma = rs2.getString("Firma");
-						builder.append("<html><pre>");
-						builder.append(String.format("%s, \t %s, \t %s lei, \t %s", getID, getData, getSuma, getFirma));
-						builder.append("</pre></html>");
-						defaultListMedel.addElement(builder.toString());
-					}
-
-					list.setModel(defaultListMedel);
+					extractedList(defaultListModel, sqlQuery);
+					
+					list.setModel(defaultListModel);
 
 					String sqlBillsSum = "select sum(suma) from bills;";
-					ResultSet rs1 = stat.executeQuery(sqlBillsSum);
-
+					preparedStat = connection.prepareStatement(sqlBillsSum);
+					ResultSet rs1 = preparedStat.executeQuery();
 					while (rs1.next()) {
 						StringBuilder builder2 = new StringBuilder();
 						builder2.append(String.format("%d", rs1.getInt(1)));
@@ -475,24 +363,20 @@ public class Bills {
 					}
 
 					String sqlBillsBSum = "select sum(money) from billsb;";
-					ResultSet rs3 = stat.executeQuery(sqlBillsBSum);
-
+					preparedStat = connection.prepareStatement(sqlBillsBSum);
+					ResultSet rs3 = preparedStat.executeQuery();
 					while (rs3.next()) {
 						StringBuilder builder3 = new StringBuilder();
 						builder3.append(String.format("%d", rs3.getInt(1)));
 						totalMoney.setText(builder3.toString());
 					}
-					String totalMoneyString = totalMoney.getText();
-					String totalMoneySpentString = totalMoneySpentLabel.getText();
-					int totalMoneyInt = Integer.parseInt(totalMoneyString);
-					int totalMoneySpentInt = Integer.parseInt(totalMoneySpentString);
-					int moneyDifference = totalMoneyInt - totalMoneySpentInt;
-					String moneyDifferenceString = String.valueOf(moneyDifference);
-					balanceLabel.setText(moneyDifferenceString);
+
+					extractedValue(balanceLabel, totalMoneySpentLabel, totalMoney);
 					textFieldPrice.setText("");
 				} catch (Exception ex) {
+					ex.printStackTrace();
 					JOptionPane.showMessageDialog(null, "Invalid input!");
-					textFieldData.setText("");
+					textFieldDate.setText("");
 					textFieldPrice.setText("");
 				}
 			}
@@ -508,64 +392,43 @@ public class Bills {
 				int result = JOptionPane.showConfirmDialog(frame, "Are you sure you want to delete the last input?",
 						"DELETE", JOptionPane.YES_NO_OPTION);
 				if (result == JOptionPane.YES_OPTION) {
-					defaultListMedel.clear();
+					defaultListModel.clear();
 					try {
-						Statement stat = connection.createStatement();
-						Statement stmt = connection.createStatement();
-
 						String sqlDelete = "DELETE FROM bills WHERE id = " + biggestID + ";";
-						stmt.executeUpdate(sqlDelete);
+						PreparedStatement statement = connection.prepareStatement(sqlDelete);
+						statement.executeUpdate();
 
-						ResultSet rs = stmt.executeQuery("SELECT * FROM BILLS order by id desc;");
-						while (rs.next()) {
+						String sqlSelect = "SELECT * FROM BILLS order by id desc;";
+						extractedList(defaultListModel, sqlSelect);
 
-							StringBuilder builder = new StringBuilder();
-							String getID = rs.getString("ID");
-							String getData = rs.getString("Data");
-							String getSuma = rs.getString("Suma");
-							String getFirma = rs.getString("Firma");
-							builder.append("<html><pre>");
-							builder.append(
-									String.format("%s, \t %s, \t %s lei, \t %s", getID, getData, getSuma, getFirma));
-							builder.append("</pre></html>");
-
-							defaultListMedel.addElement(builder.toString());
-						}
-
-						list.setModel(defaultListMedel);
+						list.setModel(defaultListModel);
 
 						String sqlBillsSum = "select sum(suma) from bills;";
-						ResultSet rs2 = stmt.executeQuery(sqlBillsSum);
-						while (rs2.next()) {
-
-							StringBuilder builder2 = new StringBuilder();
-							builder2.append(String.format("%d", rs2.getInt(1)));
-							totalMoneySpentLabel.setText(builder2.toString());
+						statement = connection.prepareStatement(sqlBillsSum);
+						ResultSet rs = statement.executeQuery();
+						while (rs.next()) {
+							StringBuilder builder = new StringBuilder();
+							builder.append(String.format("%d", rs.getInt(1)));
+							totalMoneySpentLabel.setText(builder.toString());
 						}
 
 						String sqlBillsBSum = "select sum(money) from billsb;";
-						ResultSet rs3 = stat.executeQuery(sqlBillsBSum);
-
-						StringBuilder builder3 = new StringBuilder();
-
-						while (rs3.next()) {
-							builder3.append(String.format("%d", rs3.getInt(1)));
-							totalMoney.setText(builder3.toString());
+						statement = connection.prepareStatement(sqlBillsBSum);
+						rs = statement.executeQuery();
+						while (rs.next()) {
+							StringBuilder builder = new StringBuilder();
+							builder.append(String.format("%d", rs.getInt(1)));
+							totalMoney.setText(builder.toString());
 						}
 
-						String totalMoneyString = totalMoney.getText();
-						String totalMoneySpentString = totalMoneySpentLabel.getText();
-						int totalMoneyInt = Integer.parseInt(totalMoneyString);
-						int totalMoneySpentInt = Integer.parseInt(totalMoneySpentString);
-						int moneyDifference = totalMoneyInt - totalMoneySpentInt;
-						String moneyDifferenceString = String.valueOf(moneyDifference);
-						balanceLabel.setText(moneyDifferenceString);
+						extractedValue(balanceLabel, totalMoneySpentLabel, totalMoney);
 
 						String sqlAlterSequence = "ALTER SEQUENCE bills_id_seq RESTART WITH " + biggestID + ";";
-						ResultSet rs4 = stat.executeQuery(sqlAlterSequence);
+						statement = connection.prepareStatement(sqlAlterSequence);
+						rs = statement.executeQuery();
 
-					} catch (SQLException ed) {
-						System.out.println(ed.getMessage());
+					} catch (SQLException ex) {
+						ex.getMessage();
 					}
 					biggestID--;
 				}
@@ -575,11 +438,39 @@ public class Bills {
 
 		JButton btnExit = new JButton("Exit");
 		btnExit.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent arg) {
+				try {
+					connection.close();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 				System.exit(0);
 			}
 		});
-		btnExit.setBounds(373, 228, 84, 21);
+		btnExit.setBounds(373, 248, 84, 21);
 		frame.getContentPane().add(btnExit);
+	}
+
+	private void extractedValue(JLabel balanceLabel, JLabel totalMoneySpentLabel, JLabel totalMoney) {
+		int totalMoneyValue = Integer.parseInt(totalMoney.getText());
+		int totalMoneySpentValue = Integer.parseInt(totalMoneySpentLabel.getText());
+		int moneyDifference = totalMoneyValue - totalMoneySpentValue;
+		String moneyDifferenceInt = String.valueOf(moneyDifference);
+		balanceLabel.setText(moneyDifferenceInt);
+	}
+
+	private void extractedList(DefaultListModel<String> defaultListMedel, String sqlQuery) throws SQLException {
+		PreparedStatement stat = connection.prepareStatement(sqlQuery);
+		ResultSet rs = stat.executeQuery();
+
+		while (rs.next()) {
+			StringBuilder builder = new StringBuilder();
+			String getID = rs.getString("ID");
+			String getDate = rs.getString("Date");
+			String getSuma = rs.getString("Suma");
+			String getFirma = rs.getString("Firma");
+			builder.append("<html><pre>" + String.format("%s, \t %s, \t %s lei, \t %s", getID, getDate, getSuma, getFirma) + "</pre></html>");
+			defaultListMedel.addElement(builder.toString());
+		}
 	}
 }
