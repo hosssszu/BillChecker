@@ -1,4 +1,4 @@
-public class DataTest {
+public class DateValidator {
 
 	int p1, p2, p3;
 	boolean pp1, pp2, pp3;
