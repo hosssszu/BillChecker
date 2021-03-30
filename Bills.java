@@ -30,7 +30,7 @@ public class BillTracker {
 	int biggestID = 0;
 	JFrame frame;
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
 
 		try {
 			Class.forName("org.postgresql.Driver");
