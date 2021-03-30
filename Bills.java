@@ -321,7 +321,7 @@ public class BillTracker {
 			public void actionPerformed(ActionEvent e) {
 
 				try {
-					DataValidator dateValidator = new DataValidator();
+					DataTest dateValidator = new DataTest();
 					String date = textFieldDate.getText();
 					int price = Integer.parseInt(textFieldPrice.getText());
 					String provider = comboBox.getSelectedItem().toString();					
