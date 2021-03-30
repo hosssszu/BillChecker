@@ -432,7 +432,7 @@ public class BillTracker {
 		balanceLabel.setText(moneyDifferenceInt);
 	}
 
-	private void extractedList(DefaultListModel<String> defaultListMedel, String sqlQuery) {
+	private void extractedList(DefaultListModel<String> defaultListModel, String sqlQuery) {
 		try {
 			PreparedStatement stat = connection.prepareStatement(sqlQuery);
 			ResultSet rs = stat.executeQuery();
@@ -443,7 +443,7 @@ public class BillTracker {
 				String getSuma = rs.getString("Suma");
 				String getFirma = rs.getString("Firma");
 				builder.append("<html><pre>" + String.format("%s, \t %s, \t %s lei, \t %s", getID, getDate, getSuma, getFirma) + "</pre></html>");
-				defaultListMedel.addElement(builder.toString());
+				defaultListModel.addElement(builder.toString());
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
